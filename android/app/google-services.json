@@ -1,0 +1,134 @@
+{
+  "project_info": {
+    "project_number": "982103673490",
+    "project_id": "cinn-f10bb",
+    "storage_bucket": "cinn-f10bb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:982103673490:android:3fa378adc1ddc8f525f44b",
+        "android_client_info": {
+          "package_name": "com.example.vff"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "982103673490-1f5pri5ejn924492k696qcr47dim8jna.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAMf7ruH4GA8rDpCDSNlj-M1ENlFmj4Bw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "982103673490-1f5pri5ejn924492k696qcr47dim8jna.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "982103673490-a6fbq5kq7qjpltk93bhvo59qkk0o0eck.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.houdev.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:982103673490:android:db7385217f81980625f44b",
+        "android_client_info": {
+          "package_name": "com.houdev.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "982103673490-6utkd9cvgmsfg0ss8nonq4vrd314cdk8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.houdev.app",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "982103673490-1f5pri5ejn924492k696qcr47dim8jna.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAMf7ruH4GA8rDpCDSNlj-M1ENlFmj4Bw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "982103673490-1f5pri5ejn924492k696qcr47dim8jna.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "982103673490-a6fbq5kq7qjpltk93bhvo59qkk0o0eck.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.houdev.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:982103673490:android:7805ed20c755001125f44b",
+        "android_client_info": {
+          "package_name": "hou.ameny.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "982103673490-hg4to478io7f9oqagqktl6rk77joc22g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "hou.ameny.com",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "982103673490-1f5pri5ejn924492k696qcr47dim8jna.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAMf7ruH4GA8rDpCDSNlj-M1ENlFmj4Bw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "982103673490-1f5pri5ejn924492k696qcr47dim8jna.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "982103673490-a6fbq5kq7qjpltk93bhvo59qkk0o0eck.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.houdev.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

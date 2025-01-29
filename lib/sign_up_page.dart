@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Pour utiliser FilteringTextInputFormatter
+import 'package:flutter/services.dart'; // Pour FilteringTextInputFormatter
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Ajouter l'importation
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const MaterialApp(
+    home: SignUpPage(),
+  ));
+}
 
 class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
+
   @override
   _SignUpPageState createState() => _SignUpPageState();
 }
@@ -21,12 +34,45 @@ class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController _countryController = TextEditingController();
   final TextEditingController _cinController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Instancier Firestore
 
-  // États pour gérer la visibilité du mot de passe
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-  // Fonction pour sélectionner la date et vérifier l'âge
+  Future<void> _signUp() async {
+    try {
+      // Créer l'utilisateur avec Firebase Auth
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      // Enregistrer les informations de l'utilisateur dans Firestore
+      await _firestore.collection('users').doc(userCredential.user?.uid).set({
+        'username': _usernameController.text,
+        'email': _emailController.text,
+        'first_name': _firstNameController.text,
+        'last_name': _lastNameController.text,
+        'address': _addressController.text,
+        'postal_code': _postalCodeController.text,
+        'city': _cityController.text,
+        'country': _countryController.text,
+        'dob': _dobController.text,
+        'cin': _cinController.text,
+        'phone': _phoneController.text,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User registered successfully!")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: ${e.toString()}")),
+      );
+    }
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     DateTime now = DateTime.now();
     DateTime eighteenYearsAgo = now.subtract(Duration(days: 18 * 365));
@@ -45,39 +91,16 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  // Fonction pour créer un compte
-  void _createAccount() {
+  Future<void> _createAccount() async {
     if (_formKey.currentState!.validate()) {
-      // Simuler la création d'un compte
-      final newUser = {
-        'username': _usernameController.text,
-        'email': _emailController.text,
-        'password': _passwordController.text,
-        'first_name': _firstNameController.text,
-        'last_name': _lastNameController.text,
-        'address': _addressController.text,
-        'postal_code': _postalCodeController.text,
-        'city': _cityController.text,
-        'country': _countryController.text,
-        'dob': _dobController.text,
-        'cin': _cinController.text,
-        'phone': _phoneController.text,
-      };
+      await _signUp(); // Appeler la méthode pour créer un utilisateur et enregistrer dans Firestore
 
-      // Affichage d'une notification de succès (en lieu et place d'une action réelle)
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Account successfully created!'),
-        backgroundColor: Colors.green,
-      ));
-
-      // Réinitialiser les champs après la création
       _formKey.currentState!.reset();
     }
   }
 
   @override
   void dispose() {
-    // Libérer les contrôleurs
     _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -96,7 +119,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Obtenir les dimensions de l'écran
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
@@ -173,7 +195,7 @@ class _SignUpPageState extends State<SignUpPage> {
           if (value == null || value.isEmpty) {
             return 'This field cannot be empty';
           }
-          if (isEmail && !RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zAZ0-9.-]+\.[a-zA-Z]{2,4}$").hasMatch(value)) {
+          if (isEmail && !RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$").hasMatch(value)) {
             return 'Please enter a valid email';
           }
           if (label == 'Postal Code' && !RegExp(r'^\d+$').hasMatch(value)) {
@@ -196,19 +218,20 @@ class _SignUpPageState extends State<SignUpPage> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
         controller: controller,
-        obscureText: isPassword ? !_isPasswordVisible : false,
+        obscureText: isPassword && !_isPasswordVisible,
         decoration: InputDecoration(
           labelText: label,
-          hintText: hint,
           labelStyle: TextStyle(color: Colors.blue.shade900),
+          hintText: hint,
           hintStyle: TextStyle(color: Colors.blue.shade300),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: Colors.grey.shade200,
           prefixIcon: Icon(icon, color: Colors.blue.shade900),
-          suffixIcon: IconButton(
+          suffixIcon: isPassword
+              ? IconButton(
             icon: Icon(
-              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+              _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
               color: Colors.blue.shade900,
             ),
             onPressed: () {
@@ -216,7 +239,8 @@ class _SignUpPageState extends State<SignUpPage> {
                 _isPasswordVisible = !_isPasswordVisible;
               });
             },
-          ),
+          )
+              : null,
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -236,21 +260,21 @@ class _SignUpPageState extends State<SignUpPage> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
         controller: _dobController,
-        readOnly: true,
         decoration: InputDecoration(
           labelText: 'Date of Birth',
-          hintText: 'Select your date of birth',
           labelStyle: TextStyle(color: Colors.blue.shade900),
+          hintText: 'Select your date of birth',
           hintStyle: TextStyle(color: Colors.blue.shade300),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
           fillColor: Colors.grey.shade200,
           prefixIcon: Icon(Icons.calendar_today, color: Colors.blue.shade900),
         ),
+        readOnly: true,
         onTap: () => _selectDate(context),
         validator: (value) {
           if (value == null || value.isEmpty) {
-            return 'Please select your date of birth';
+            return 'Date of birth is required';
           }
           return null;
         },

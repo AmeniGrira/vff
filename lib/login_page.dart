@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatefulWidget {
@@ -163,10 +164,46 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _login() {
+  void _login() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // Rediriger vers la page d'accueil après une connexion réussie
-      Navigator.pushReplacementNamed(context, '/home');
+      try {
+        // Utilisation de Firebase pour se connecter
+        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+
+        // Redirection vers la page d'accueil après la connexion réussie
+        Navigator.pushReplacementNamed(context, '/home');
+      } on FirebaseAuthException catch (e) {
+        // Gestion des erreurs Firebase
+        if (e.code == 'user-not-found') {
+          _showErrorDialog("No user found for that email.");
+        } else if (e.code == 'wrong-password') {
+          _showErrorDialog("Wrong password provided for that user.");
+        }
+      }
     }
+  }
+
+  // Fonction pour afficher une boîte de dialogue d'erreur
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
