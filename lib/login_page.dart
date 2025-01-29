@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -70,10 +79,7 @@ class LoginPage extends StatelessWidget {
                         ),
                         SizedBox(height: screenHeight * 0.02),
                         ElevatedButton(
-                          onPressed: () {
-                            // Rediriger vers la page d'accueil après une connexion réussie
-                            Navigator.pushReplacementNamed(context, '/home');
-                          },
+                          onPressed: _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue.shade900,
                             shape: RoundedRectangleBorder(
@@ -87,7 +93,7 @@ class LoginPage extends StatelessWidget {
                         SizedBox(height: screenHeight * 0.02),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/signUp');  // Redirection vers la page d'inscription
+                            Navigator.pushNamed(context, '/signUp');
                           },
                           child: const Text(
                             "Create an account",
@@ -113,28 +119,54 @@ class LoginPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
-      child: Column(
-        children: [
-          TextField(
-            decoration: InputDecoration(
-              hintText: "Email",
-              hintStyle: const TextStyle(color: Colors.grey),
-              prefixIcon: const Icon(Icons.email, color: Colors.blue),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                hintText: "Email",
+                hintStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.email, color: Colors.blue),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter an email';
+                } else if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                  return 'Enter a valid email';
+                }
+                return null;
+              },
             ),
-          ),
-          SizedBox(height: 20),
-          TextField(
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: "Password",
-              hintStyle: const TextStyle(color: Colors.grey),
-              prefixIcon: const Icon(Icons.lock, color: Colors.blue),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            SizedBox(height: 20),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: InputDecoration(
+                hintText: "Password",
+                hintStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.lock, color: Colors.blue),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your password';
+                }
+                return null;
+              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  void _login() {
+    if (_formKey.currentState?.validate() ?? false) {
+      // Rediriger vers la page d'accueil après une connexion réussie
+      Navigator.pushReplacementNamed(context, '/home');
+    }
   }
 }
