@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_core/firebase_core.dart';  // Ajoutez cette importation
+
 import 'home_page.dart';  // Assurez-vous que ce fichier est importé avec la bonne classe 'HomePage'
 import 'login_page.dart';
 import 'sign_up_page.dart';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  // Ajoutez cette ligne
-  await Firebase.initializeApp();  // Initialisez Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(MyApp());
 }
 
