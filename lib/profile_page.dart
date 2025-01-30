@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'pass_page.dart'; // Assure-toi que le chemin est correct
-import 'delete_account_page.dart'; // Importer la page de suppression de compte
+ import 'delete_account_page.dart'; // Importer la page de suppression de compte
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -13,15 +14,37 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String? userEmail = 'user@example.com';
+  String? userEmail;
   bool isLoading = false;
   String? errorMessage;
   XFile? _image;
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
     super.initState();
     _loadProfileImage();
+    _fetchUserEmail();
+  }
+
+  Future<void> _fetchUserEmail() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        setState(() {
+          userEmail = user.email;
+        });
+      } else {
+        setState(() {
+          userEmail = 'No user signed in';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+      });
+    }
   }
 
   void _loadProfileImage() async {
@@ -51,6 +74,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _logout() {
+    _auth.signOut();
     Navigator.pushReplacementNamed(context, '/login');
   }
 
@@ -72,7 +96,6 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -138,21 +161,18 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.03),
-
                 _buildSection(
                   title: 'User Email',
                   content: userEmail ?? 'Loading...',
                   icon: Icons.email,
                 ),
                 SizedBox(height: screenHeight * 0.03),
-
                 _buildSectionTitle('Additional Information'),
                 SizedBox(height: screenHeight * 0.02),
                 _buildInfoCard('Name: John Doe', Icons.person),
                 SizedBox(height: screenHeight * 0.02),
                 _buildInfoCard('Description: Mobile Developer', Icons.description),
                 SizedBox(height: screenHeight * 0.05),
-
                 _buildCustomButton(
                   label: 'Change Password',
                   onPressed: _navigateToChangePassword,

@@ -1,10 +1,34 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'contact_service.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:path_provider/path_provider.dart';
 import 'profile_page.dart';
 import 'settings_page.dart';
+import 'contact_service.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+Future<String> _uploadImageToFirebaseStorage(Uint8List imageBytes, String imageName) async {
+  try {
+    // Create a reference to the Firebase Storage location
+    final Reference storageReference = FirebaseStorage.instance.ref().child('cin_images/$imageName.png');
 
+    // Upload the image
+    final UploadTask uploadTask = storageReference.putData(imageBytes);
+
+    // Wait for the upload to complete
+    final TaskSnapshot taskSnapshot = await uploadTask;
+
+    // Get the download URL
+    final String downloadURL = await taskSnapshot.ref.getDownloadURL();
+
+    return downloadURL;
+  } catch (e) {
+    print('Error uploading image: $e');
+    throw e; // Handle the error as needed
+  }
+}
 class HomePage extends StatefulWidget {
   final Function(bool) onModeChanged;
   final Function(String?) onLanguageChanged;
@@ -21,7 +45,6 @@ class _HomePageState extends State<HomePage> {
   Uint8List? _rectoImage;
   Uint8List? _versoImage;
   String _recognizedText = '';
-
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -64,10 +87,27 @@ class _HomePageState extends State<HomePage> {
               SizedBox(height: screenHeight * 0.03),
               _buildImagesAfterValidation(),
               SizedBox(height: screenHeight * 0.02),
-              Text(
-                _recognizedText,
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
+              if (_recognizedText.isNotEmpty)
+                Container(
+                  padding: EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    _recognizedText,
+                    textAlign: TextAlign.right, // Affichage en direction RTL pour l'arabe
+                    textDirection: TextDirection.rtl, // Direction du texte en arabe
+                    style: TextStyle(fontSize: 16, color: Colors.black),
+                  ),
+                ),
             ],
           ),
         ),
@@ -149,10 +189,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _chooseImage(String label) async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-    );
-
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       final imageBytes = await pickedFile.readAsBytes();
       setState(() {
@@ -222,32 +259,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+
+  // Méthode pour naviguer vers une autre page
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+
     if (index == 0) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SettingsPage(
-            onModeChanged: widget.onModeChanged,
-            onLanguageChanged: widget.onLanguageChanged,
-          ),
-        ),
-      );
+      _navigateToPage(SettingsPage(
+        onModeChanged: widget.onModeChanged,
+        onLanguageChanged: widget.onLanguageChanged,
+      ));
     } else if (index == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ContactServicePage()),
-      );
+      _navigateToPage(ContactServicePage());
     } else if (index == 2) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ProfilePage()),
-      );
+      _navigateToPage(ProfilePage());
     }
   }
+
+  void _navigateToPage(Widget page) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+  }
+
+// Navigate to different pages based on index
+
 
   Future<void> _validateImages() async {
     if (_rectoImage == null && _versoImage == null) {
@@ -257,9 +293,44 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
+    final recognizedTexts = <String>[];
+    final textRecognizer = TextRecognizer();
+
+    for (final imageBytes in [_rectoImage, _versoImage]) {
+      if (imageBytes != null) {
+        final inputImage = InputImage.fromFilePath(await _writeImageToFile(imageBytes));
+        final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+        recognizedTexts.add(_extractRecognizedText(recognizedText));
+      }
+    }
+
+    await textRecognizer.close();
+
     setState(() {
-      _recognizedText = 'Images validated without OCR.';
+      _recognizedText = recognizedTexts.join('\n');
     });
+
+    // Save to Firebase
+    await FirebaseFirestore.instance.collection('CIN').add({
+      'text': _recognizedText,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<String> _writeImageToFile(Uint8List imageBytes) async {
+    final tempDir = await getTemporaryDirectory();
+    final tempFilePath = '${tempDir.path}/temp_image.png';
+    final tempFile = File(tempFilePath);
+    await tempFile.writeAsBytes(imageBytes);
+    return tempFilePath;
+  }
+
+  String _extractRecognizedText(RecognizedText recognizedText) {
+    String text = '';
+    for (TextBlock block in recognizedText.blocks) {
+      text += '${block.text}\n'; // Affichage du texte reconnu
+    }
+    return text;
   }
 
   Future<void> _chooseImageDialog() async {
@@ -297,10 +368,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _chooseImageFromCamera(String label) async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.camera,
-    );
-
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
       final imageBytes = await pickedFile.readAsBytes();
       setState(() {

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
@@ -15,8 +16,8 @@ class _ContactServicePageState extends State<ContactServicePage> {
   bool _isLoading = false;
   double _rating = 0.0;
 
-  // Fonction pour envoyer le message (simplement afficher un message)
-  void _sendMessage() {
+  // Fonction pour envoyer le message
+  void _sendMessage() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final message = _messageController.text.trim();
@@ -29,16 +30,34 @@ class _ContactServicePageState extends State<ContactServicePage> {
     }
 
     setState(() {
-      _status = "Message sent successfully!";
+      _status = "Sending message...";
     });
 
-    _nameController.clear();
-    _emailController.clear();
-    _messageController.clear();
+    try {
+      // Enregistrer le message dans Firestore
+      await FirebaseFirestore.instance.collection('messages').add({
+        'name': name,
+        'email': email,
+        'message': message,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        _status = "Message sent successfully!";
+      });
+
+      _nameController.clear();
+      _emailController.clear();
+      _messageController.clear();
+    } catch (e) {
+      setState(() {
+        _status = "Error sending message: $e";
+      });
+    }
   }
 
-  // Fonction pour envoyer les retours (simplement afficher un message)
-  void _sendFeedback() {
+  // Fonction pour envoyer les retours
+  void _sendFeedback() async {
     final feedback = _feedbackController.text.trim();
 
     if (feedback.isEmpty || _rating == 0.0) {
@@ -49,10 +68,27 @@ class _ContactServicePageState extends State<ContactServicePage> {
     }
 
     setState(() {
-      _status = "Feedback sent successfully!";
+      _status = "Sending feedback...";
     });
 
-    _feedbackController.clear();
+    try {
+      // Enregistrer les retours dans Firestore
+      await FirebaseFirestore.instance.collection('feedback').add({
+        'feedback': feedback,
+        'rating': _rating,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      setState(() {
+        _status = "Feedback sent successfully!";
+      });
+
+      _feedbackController.clear();
+    } catch (e) {
+      setState(() {
+        _status = "Error sending feedback: $e";
+      });
+    }
   }
 
   @override

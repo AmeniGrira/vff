@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Importez Firebase Auth
 
 class DeleteAccountPage extends StatelessWidget {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Supprimer le compte'),
@@ -62,8 +64,16 @@ class DeleteAccountPage extends StatelessWidget {
     );
 
     if (confirmDelete) {
-      // Redirige vers la page de connexion après suppression
-      Navigator.pushReplacementNamed(context, '/login');
+      try {
+        await _auth.currentUser!.delete(); // Supprime l'utilisateur actuel
+        // Redirige vers la page de connexion après suppression
+        Navigator.pushReplacementNamed(context, '/login');
+      } catch (e) {
+        // Gestion des erreurs possibles lors de la suppression
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur lors de la suppression du compte: $e')),
+        );
+      }
     }
   }
 }

@@ -1,84 +1,50 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class PassPage extends StatefulWidget {
-  const PassPage({Key? key}) : super(key: key);
+class ResetPasswordPage extends StatefulWidget {
+  const ResetPasswordPage({Key? key}) : super(key: key);
 
   @override
-  _PassPageState createState() => _PassPageState();
+  _ResetPasswordPageState createState() => _ResetPasswordPageState();
 }
 
-class _PassPageState extends State<PassPage> {
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final _auth = FirebaseAuth.instance;
-  final _oldPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  final _emailController = TextEditingController();
   String errorMessage = '';
   String successMessage = '';
   bool isLoading = false;
 
-  // Fonction pour changer le mot de passe
-  Future<void> _changePassword() async {
+  // Function to send password reset email
+  Future<void> _sendPasswordResetEmail() async {
     setState(() {
       isLoading = true;
       errorMessage = '';
       successMessage = '';
     });
 
-    final oldPassword = _oldPasswordController.text.trim();
-    final newPassword = _newPasswordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+    final email = _emailController.text.trim();
 
-    if (newPassword != confirmPassword) {
+    if (email.isEmpty) {
       setState(() {
-        errorMessage = 'The new passwords do not match.';
+        errorMessage = 'Please enter your email.';
         isLoading = false;
       });
       return;
     }
 
     try {
-      // Vérification de l'utilisateur authentifié
-      User? user = _auth.currentUser;
-
-      if (user == null) {
-        setState(() {
-          errorMessage = 'No user is currently logged in.';
-          isLoading = false;
-        });
-        return;
-      }
-
-      // Créer des informations d'identification avec l'ancien mot de passe
-      AuthCredential credential = EmailAuthProvider.credential(
-        email: user.email!,
-        password: oldPassword,
-      );
-
-      // Ré-authentification de l'utilisateur
-      await user.reauthenticateWithCredential(credential);
-
-      // Mettre à jour le mot de passe
-      await user.updatePassword(newPassword);
-
+      await _auth.sendPasswordResetEmail(email: email);
       setState(() {
-        successMessage = 'Password changed successfully!';
+        successMessage = 'Password reset email sent successfully!';
         errorMessage = '';
         isLoading = false;
       });
-
-      // Réinitialiser les champs
-      _oldPasswordController.clear();
-      _newPasswordController.clear();
-      _confirmPasswordController.clear();
-
-      // Retourner à la page précédente après un délai
-      Future.delayed(Duration(seconds: 2), () {
-        Navigator.pop(context);
-      });
+      // Clear the field
+      _emailController.clear();
     } catch (e) {
       setState(() {
-        errorMessage = 'Error changing password: ${e.toString()}';
+        errorMessage = 'Error sending password reset email: ${e.toString()}';
         isLoading = false;
       });
     }
@@ -93,7 +59,7 @@ class _PassPageState extends State<PassPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Change Password',
+          'Reset Password',
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
@@ -139,30 +105,12 @@ class _PassPageState extends State<PassPage> {
                 ),
                 SizedBox(height: screenHeight * 0.03),
                 _buildTextField(
-                  controller: _oldPasswordController,
-                  labelText: 'Old Password',
-                  isPassword: true,
+                  controller: _emailController,
+                  labelText: 'Email',
+                  isPassword: false,
                   screenWidth: screenWidth,
                   screenHeight: screenHeight,
-                  icon: Icons.lock_outline,
-                ),
-                SizedBox(height: screenHeight * 0.02),
-                _buildTextField(
-                  controller: _newPasswordController,
-                  labelText: 'New Password',
-                  isPassword: true,
-                  screenWidth: screenWidth,
-                  screenHeight: screenHeight,
-                  icon: Icons.lock_open,
-                ),
-                SizedBox(height: screenHeight * 0.02),
-                _buildTextField(
-                  controller: _confirmPasswordController,
-                  labelText: 'Confirm Password',
-                  isPassword: true,
-                  screenWidth: screenWidth,
-                  screenHeight: screenHeight,
-                  icon: Icons.lock,
+                  icon: Icons.email,
                 ),
                 SizedBox(height: screenHeight * 0.03),
                 isLoading
@@ -170,7 +118,7 @@ class _PassPageState extends State<PassPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade800),
                 )
                     : ElevatedButton(
-                  onPressed: _changePassword,
+                  onPressed: _sendPasswordResetEmail,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue.shade800,
                     padding: EdgeInsets.symmetric(
@@ -183,7 +131,7 @@ class _PassPageState extends State<PassPage> {
                     elevation: 5,
                   ),
                   child: Text(
-                    'Change Password',
+                    'Send Password Reset Email',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

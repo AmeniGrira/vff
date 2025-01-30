@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+// Import the ResetPasswordPage
+import 'ResetPasswordPage.dart'; // Ensure this path is correct
+
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -12,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  bool _isObscure = true;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +76,12 @@ class _LoginPageState extends State<LoginPage> {
                         _buildInputFields(),
                         SizedBox(height: screenHeight * 0.03),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+                            );
+                          },
                           child: const Text(
                             "Forgot Password?",
                             style: TextStyle(color: Colors.blue, fontSize: 16, fontWeight: FontWeight.bold),
@@ -141,14 +150,22 @@ class _LoginPageState extends State<LoginPage> {
                 return null;
               },
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormField(
               controller: _passwordController,
-              obscureText: true,
+              obscureText: _isObscure,
               decoration: InputDecoration(
                 hintText: "Password",
                 hintStyle: const TextStyle(color: Colors.grey),
                 prefixIcon: const Icon(Icons.lock, color: Colors.blue),
+                suffixIcon: IconButton(
+                  icon: Icon(_isObscure ? Icons.visibility : Icons.visibility_off, color: Colors.blue),
+                  onPressed: () {
+                    setState(() {
+                      _isObscure = !_isObscure;
+                    });
+                  },
+                ),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
               validator: (value) {
@@ -167,43 +184,46 @@ class _LoginPageState extends State<LoginPage> {
   void _login() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
-        // Utilisation de Firebase pour se connecter
+        // Use Firebase to log in
         UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text,
           password: _passwordController.text,
         );
-
-        // Redirection vers la page d'accueil après la connexion réussie
+        // Navigate to the home page after successful login
         Navigator.pushReplacementNamed(context, '/home');
       } on FirebaseAuthException catch (e) {
-        // Gestion des erreurs Firebase
-        if (e.code == 'user-not-found') {
-          _showErrorDialog("No user found for that email.");
-        } else if (e.code == 'wrong-password') {
-          _showErrorDialog("Wrong password provided for that user.");
+        // Handle Firebase errors
+        String errorMessage = '';
+        switch (e.code) {
+          case 'user-not-found':
+            errorMessage = "No user found for that email.";
+            break;
+          case 'wrong-password':
+            errorMessage = "Wrong password provided for that user.";
+            break;
+          case 'invalid-email':
+            errorMessage = "The email address is badly formatted.";
+            break;
+          case 'user-disabled':
+            errorMessage = "The user account has been disabled by an administrator.";
+            break;
+          default:
+            errorMessage = "An error occurred. Please try again later.";
         }
+        _showErrorSnackBar(errorMessage);
+      } catch (e) {
+        _showErrorSnackBar("An unexpected error occurred.");
       }
     }
   }
 
-  // Fonction pour afficher une boîte de dialogue d'erreur
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Error"),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("OK"),
-            ),
-          ],
-        );
-      },
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 }
